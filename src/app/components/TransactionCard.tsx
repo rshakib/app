@@ -60,29 +60,29 @@ export function TransactionCard({
   const amountColor = isReceived ? 'text-emerald-600 font-bold' : 'text-primary font-bold';
 
   return (
-    <div className={`bg-white border ${config.borderColor} rounded-2xl p-5 hover:shadow-xl transition-all duration-300 group`}>
+    <div className={`bg-white/5 backdrop-blur-md border ${config.borderColor} rounded-2xl p-5 hover:bg-white/10 hover:shadow-2xl hover:shadow-accent/5 transition-all duration-300 group`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <div className={`w-12 h-12 rounded-2xl ${config.bgColor} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-inner`}>
             <ArrowUpRight size={24} className={`${config.color} ${isReceived ? 'rotate-180' : ''}`} />
           </div>
           <div>
-            <p className="font-bold text-primary group-hover:text-accent transition-colors">@{displayUser || 'unknown'}</p>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{timestamp}</p>
+            <p className="font-bold text-white group-hover:text-accent transition-colors">@{displayUser || 'unknown'}</p>
+            <p className="text-xs font-semibold text-white/40 uppercase tracking-widest">{timestamp}</p>
           </div>
         </div>
         <div className="text-right">
-          <p className={`font-bold text-xl tracking-tight ${amountColor}`}>{prefix}৳{amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-          <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg ${config.bgColor} mt-2 shadow-sm border border-black/5`}>
+          <p className={`font-bold text-xl tracking-tight ${isReceived ? 'text-emerald-400' : 'text-white'}`}>{prefix}৳{amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+          <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg ${config.bgColor} mt-2 shadow-sm border border-white/5`}>
             <StatusIcon size={12} className={config.color} />
             <span className={`text-[10px] font-bold uppercase tracking-wider ${config.color}`}>{config.label}</span>
           </div>
         </div>
       </div>
       {showSecurityBadge && status === 'success' && (
-        <div className="flex gap-2 pt-3 border-t border-border/50">
-          <SecurityBadge type="aes-secured" className="text-[10px] uppercase font-bold tracking-tighter h-6 px-2 bg-emerald-500/10 text-emerald-700 border-emerald-500/20" />
-          <SecurityBadge type="hmac-verified" className="text-[10px] uppercase font-bold tracking-tighter h-6 px-2 bg-blue-500/10 text-blue-700 border-blue-500/20" />
+        <div className="flex gap-2 pt-3 border-t border-white/5">
+          <SecurityBadge type="aes-secured" className="text-[10px] uppercase font-bold tracking-tighter h-6 px-2 bg-emerald-500/10 text-emerald-400 border-emerald-500/20" />
+          <SecurityBadge type="hmac-verified" className="text-[10px] uppercase font-bold tracking-tighter h-6 px-2 bg-blue-500/10 text-blue-400 border-blue-500/20" />
         </div>
       )}
     </div>

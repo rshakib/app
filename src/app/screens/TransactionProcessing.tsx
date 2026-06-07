@@ -41,12 +41,12 @@ export function TransactionProcessing() {
     }
 
     // Validate session has all required crypto fields
-    if (!session.k1 || !session.k2 || !session.bp || !session.last_t) {
+    if (!session.k1 || !session.k2 || !session.bp || session.last_t === undefined || session.last_t === null) {
       console.error('Missing crypto fields in session:', { 
         k1: !!session.k1, 
         k2: !!session.k2, 
         bp: !!session.bp, 
-        t: !!session.last_t 
+        t: session.last_t !== undefined && session.last_t !== null
       });
       setTransactionStatus('failed');
       setTimeout(() => {
