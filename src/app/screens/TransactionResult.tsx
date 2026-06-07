@@ -67,11 +67,15 @@ export function TransactionResult() {
   const isSuccess = status === 'success';
 
   return (
-    <div className={`min-h-screen ${isSuccess ? 'bg-[#F8FAFC]' : 'bg-destructive/5'} flex items-center justify-center p-4`}>
+    <div className="min-h-screen bg-primary text-white flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Decorative gradients */}
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/30 rounded-full blur-[120px]" />
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="max-w-md w-full bg-white rounded-[2.5rem] p-8 shadow-2xl border border-border/50 overflow-hidden relative"
+        className="max-w-md w-full bg-white rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 overflow-hidden relative z-10 text-primary"
       >
         {isSuccess && <div className="absolute top-0 left-0 w-full h-2 bg-success" />}
         {!isSuccess && <div className="absolute top-0 left-0 w-full h-2 bg-destructive" />}
@@ -143,7 +147,7 @@ export function TransactionResult() {
         )}
 
         <div className="space-y-4">
-          <Button variant="primary" fullWidth size="lg" onClick={() => navigate('/dashboard')} className="py-5 font-bold tracking-tight">
+          <Button variant="primary" fullWidth size="lg" onClick={() => navigate('/dashboard')} className="py-5 font-bold tracking-tight bg-primary text-white hover:bg-secondary">
             Return to Core
           </Button>
 
