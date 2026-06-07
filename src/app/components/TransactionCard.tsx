@@ -2,14 +2,18 @@ import { ArrowUpRight, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { SecurityBadge } from './SecurityBadge';
 
 interface TransactionCardProps {
-  receiverUsername: string;
+  type?: 'sent' | 'received';
+  senderUsername?: string;
+  receiverUsername?: string;
   amount: number;
   timestamp: string;
-  status: 'success' | 'rejected' | 'pending';
+  status: 'success' | 'rejected' | 'pending' | 'aborted';
   showSecurityBadge?: boolean;
 }
 
 export function TransactionCard({
+  type = 'sent',
+  senderUsername,
   receiverUsername,
   amount,
   timestamp,
@@ -19,41 +23,56 @@ export function TransactionCard({
   const statusConfig = {
     success: {
       icon: CheckCircle,
-      color: 'text-success',
-      bgColor: 'bg-success/10',
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-500/10',
+      borderColor: 'border-emerald-500/20',
       label: 'Authorized',
     },
     rejected: {
       icon: XCircle,
-      color: 'text-destructive',
-      bgColor: 'bg-destructive/10',
+      color: 'text-red-500',
+      bgColor: 'bg-red-500/10',
+      borderColor: 'border-red-500/20',
       label: 'Blocked',
+    },
+    aborted: {
+      icon: XCircle,
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-500/10',
+      borderColor: 'border-amber-500/20',
+      label: 'Aborted',
     },
     pending: {
       icon: Clock,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50',
-      label: 'Securing',
+      color: 'text-sky-500',
+      bgColor: 'bg-sky-500/10',
+      borderColor: 'border-sky-500/20',
+      label: 'Verifying',
     },
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[status] || statusConfig.pending;
   const StatusIcon = config.icon;
 
+  const isReceived = type === 'received';
+  const displayUser = isReceived ? senderUsername : receiverUsername;
+  const prefix = isReceived ? '+' : '-';
+  const amountColor = isReceived ? 'text-emerald-600 font-bold' : 'text-primary font-bold';
+
   return (
-    <div className="bg-white border border-border/50 rounded-2xl p-5 hover:shadow-xl transition-all duration-300 group">
+    <div className={`bg-white border ${config.borderColor} rounded-2xl p-5 hover:shadow-xl transition-all duration-300 group`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-4">
           <div className={`w-12 h-12 rounded-2xl ${config.bgColor} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-inner`}>
-            <ArrowUpRight size={24} className={config.color} />
+            <ArrowUpRight size={24} className={`${config.color} ${isReceived ? 'rotate-180' : ''}`} />
           </div>
           <div>
-            <p className="font-bold text-primary group-hover:text-accent transition-colors">@{receiverUsername}</p>
+            <p className="font-bold text-primary group-hover:text-accent transition-colors">@{displayUser || 'unknown'}</p>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{timestamp}</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="font-bold text-xl text-primary tracking-tight">-৳{amount.toFixed(2)}</p>
+          <p className={`font-bold text-xl tracking-tight ${amountColor}`}>{prefix}৳{amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
           <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg ${config.bgColor} mt-2 shadow-sm border border-black/5`}>
             <StatusIcon size={12} className={config.color} />
             <span className={`text-[10px] font-bold uppercase tracking-wider ${config.color}`}>{config.label}</span>
@@ -62,10 +81,11 @@ export function TransactionCard({
       </div>
       {showSecurityBadge && status === 'success' && (
         <div className="flex gap-2 pt-3 border-t border-border/50">
-          <SecurityBadge type="aes-secured" className="text-[10px] uppercase font-bold tracking-tighter h-6 px-2" />
-          <SecurityBadge type="hmac-verified" className="text-[10px] uppercase font-bold tracking-tighter h-6 px-2" />
+          <SecurityBadge type="aes-secured" className="text-[10px] uppercase font-bold tracking-tighter h-6 px-2 bg-emerald-500/10 text-emerald-700 border-emerald-500/20" />
+          <SecurityBadge type="hmac-verified" className="text-[10px] uppercase font-bold tracking-tighter h-6 px-2 bg-blue-500/10 text-blue-700 border-blue-500/20" />
         </div>
       )}
     </div>
   );
 }
+

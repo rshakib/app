@@ -1,5 +1,5 @@
 import { useNavigate, Navigate } from 'react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../components/Button';
 import { SecurityBadge } from '../components/SecurityBadge';
 import { DailyLimitIndicator } from '../components/DailyLimitIndicator';
@@ -17,17 +17,63 @@ import {
   PieChart,
   ArrowRight,
   ShieldCheck,
+  TrendingUp,
 } from 'lucide-react';
 import { getUserSession, clearUserSession } from '../../utils/session';
+import { getUser, getTransactionHistory } from '../../utils/api';
 
 export function Dashboard() {
   const navigate = useNavigate();
   const session = getUserSession();
   const [showBalance, setShowBalance] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(session);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
 
   if (!session) {
     return <Navigate to="/login" replace />;
   }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDashboardData = async () => {
+      try {
+        // Fetch latest balance and limits from database
+        const userRes = await getUser(session.username);
+        if (isMounted && userRes && userRes.status === 'success' && userRes.user) {
+          setProfile(prev => ({
+            ...prev,
+            balance: userRes.user.balance,
+            daily_limit: userRes.user.daily_limit,
+            today_spent: userRes.user.today_spent,
+          }));
+        }
+
+        // Fetch transaction history
+        const txRes = await getTransactionHistory(session.username);
+        if (isMounted && txRes && txRes.status === 'success' && txRes.transactions) {
+          // Sort transactions by date descending and get top 3
+          const sorted = [...txRes.transactions]
+            .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .slice(0, 3);
+          setRecentTransactions(sorted);
+        }
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session.username]);
 
   const handleLogout = () => {
     clearUserSession();
@@ -41,34 +87,13 @@ export function Dashboard() {
     { icon: Plus, label: 'Top-up', color: 'bg-success', route: '/features' },
   ];
 
-  const recentTransactions = [
-    {
-      receiverUsername: 'vegetable_market_01',
-      amount: 250.00,
-      timestamp: 'Today, 14:30',
-      status: 'success' as const,
-    },
-    {
-      receiverUsername: 'bus_service_05',
-      amount: 50.00,
-      timestamp: 'Today, 12:15',
-      status: 'success' as const,
-    },
-    {
-      receiverUsername: 'utility_electric',
-      amount: 800.00,
-      timestamp: 'Yesterday, 09:00',
-      status: 'success' as const,
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Premium Header */}
       <div className="bg-primary text-white relative overflow-hidden pb-32">
         {/* Abstract background shapes */}
-        <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-accent/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-48 h-48 bg-secondary/40 rounded-full blur-3xl" />
+        <div className="absolute top-[-20%] right-[-10%] w-96 h-96 bg-accent/20 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-72 h-72 bg-secondary/40 rounded-full blur-[80px]" />
         
         <div className="max-w-4xl mx-auto px-6 pt-10 relative z-10">
           <div className="flex items-center justify-between mb-10">
@@ -82,7 +107,10 @@ export function Dashboard() {
               </div>
             </div>
             <div className="flex gap-3">
-              <button className="w-11 h-11 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10 hover:bg-white/20 transition-all shadow-xl">
+              <button 
+                onClick={() => navigate('/features')}
+                className="w-11 h-11 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10 hover:bg-white/20 transition-all shadow-xl"
+              >
                 <Bell size={20} />
               </button>
               <button
@@ -99,7 +127,7 @@ export function Dashboard() {
                 <p className="text-sm font-semibold text-white/60 tracking-wider uppercase">Total Liquidity</p>
                 <div className="flex items-center gap-4">
                   <h1 className="text-5xl font-bold tracking-tighter">
-                    {showBalance ? `৳${session.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '••••••'}
+                    {showBalance ? `৳${(profile?.balance ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '••••••'}
                   </h1>
                   <button 
                     onClick={() => setShowBalance(!showBalance)}
@@ -111,7 +139,7 @@ export function Dashboard() {
              </div>
              
              <div className="max-w-xs">
-                <DailyLimitIndicator spent={session.today_spent} limit={session.daily_limit} />
+                <DailyLimitIndicator spent={profile?.today_spent ?? 0} limit={profile?.daily_limit ?? 5000} />
              </div>
           </div>
         </div>
@@ -158,10 +186,44 @@ export function Dashboard() {
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
+          
           <div className="space-y-4">
-            {recentTransactions.map((transaction, index) => (
-              <TransactionCard key={index} {...transaction} showSecurityBadge={true} />
-            ))}
+            {loading ? (
+              <div className="bg-white border border-border/50 rounded-2xl p-8 text-center shadow-sm">
+                <p className="text-sm text-muted-foreground animate-pulse">Loading transaction records...</p>
+              </div>
+            ) : recentTransactions.length > 0 ? (
+              recentTransactions.map((transaction) => (
+                <TransactionCard 
+                  key={transaction.id} 
+                  type={transaction.type}
+                  amount={transaction.amount}
+                  status={transaction.status}
+                  timestamp={new Date(transaction.created_at).toLocaleString()}
+                  senderUsername={transaction.sender_username || transaction.senderUsername}
+                  receiverUsername={transaction.receiver_username || transaction.receiverUsername}
+                  showSecurityBadge={true} 
+                />
+              ))
+            ) : (
+              <div className="bg-white border border-border/50 rounded-[2rem] p-10 text-center shadow-sm">
+                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="text-muted-foreground" size={24} />
+                </div>
+                <h4 className="text-base font-bold text-primary mb-1">No Transactions Yet</h4>
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                  Your recent transaction logs and cryptographic authorizations will show up here.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/send-money')}
+                  className="mt-4 border-accent/30 text-accent hover:bg-accent/5 hover:text-accent"
+                >
+                  Send First Payment
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
